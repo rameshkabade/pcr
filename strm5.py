@@ -144,7 +144,7 @@ while True:
         with col2:
             display_data(df_banknifty, "BANKNIFTY")
         
-        st.info(f"Data will automatically refresh")
+##        st.info(f"Data will automatically refresh")
         st.markdown(
             """
             <div style='text-align: center; color: gray; font-size: 16px;'>
