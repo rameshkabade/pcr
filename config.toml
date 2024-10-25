@@ -1,8 +1,0 @@
-[theme]
-base="dark"
-
-[ui]
-hideTopBar = true
-
-[server]
-runOnSave = true
