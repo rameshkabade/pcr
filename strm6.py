@@ -75,14 +75,20 @@ while True:
         token = "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"
 
         url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{file_path}"
+        print(url)
         headers = {"Authorization": f"token {token}"}
 
         response = requests.get(url, headers=headers)
+        print(response)
         if response.status_code == 200:
             content = response.json()
             sha = content['sha']
             file_content = base64.b64decode(content['content'])
             df_nifty = pd.read_csv(io.StringIO(file_content.decode('utf-8')), index_col='datetime')
+        else :
+            df_nifty = pd.DataFrame()
+            print(response)
+            
 
         file_path = "BANKNIFTY.csv"
         url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{file_path}"
@@ -92,6 +98,9 @@ while True:
             sha = content['sha']
             file_content = base64.b64decode(content['content'])
             df_banknifty = pd.read_csv(io.StringIO(file_content.decode('utf-8')), index_col='datetime')
+        else :
+            df_banknifty =pd.DataFrame()
+            print(response)
 
         col1, col2 = st.columns(2)
         
