@@ -19,10 +19,13 @@ def display_data(df, title):
         return
 
     display_df = df.tail(10).copy()
+
+   
     dispdate = pd.to_datetime(display_df.index[-1]).strftime('%Y-%m-%d %H:%M')
     
+    
     format_dict = {
-        'close': '{:.2f}',
+        'CLOSE': '{:.2f}',
         'PCR_VOL': '{:.2f}',
         'PCR_OI': '{:.2f}',
         'PCR_COI': '{:.2f}',
