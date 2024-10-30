@@ -6,6 +6,7 @@ import requests
 import base64
 import io
 import os
+import sys
 
 st.set_page_config(
     layout="wide",
@@ -15,20 +16,23 @@ st.set_page_config(
 
 
 
-
 def display_data(df, title):
-    if df.empty:
-        st.warning(f"No data available for {title}")
-        return
-    if len(df) < 2 :
+    # Check if the DataFrame has sufficient data
+    if df.empty or len(df) < 2:
         st.warning(f"No data available for {title}")
         return
 
-    display_df = df.tail(10).copy()
-    display_df = display_df.reset_index()  # Reset index to ensure uniqueness
-    
-    dispdate = pd.to_datetime(display_df['datetime'].iloc[-1]).strftime('%Y-%m-%d %H:%M')
-    
+    # Ensure unique index to prevent styling errors
+    if not df.index.is_unique:
+        df = df[~df.index.duplicated(keep='first')]
+
+    # Reverse the DataFrame so the latest data appears first
+    display_df = df[::-1]
+
+    # Get the most recent datetime for display
+    dispdate = pd.to_datetime(display_df.index[0]).strftime('%Y-%m-%d %H:%M')
+
+    # Define formatting for specific columns
     format_dict = {
         'CLOSE': '{:.2f}',
         'PCR_VOL': '{:.2f}',
@@ -38,53 +42,30 @@ def display_data(df, title):
         'RSI': '{:.2f}',
         'SIGNAL': '{}'
     }
-    
-    # Create the styler object
-    df_styled = display_df.style.format(format_dict)
-    
-    # Define style functions that return full-length lists
+
+    # Define column color style
     def color_columns(col):
         if col.name in ['ZSCORE', 'RSI', 'PCR_COI']:
-            return ['color: green' if v > 0 else 'color: red' for v in col]
+            return ['color: green' if v > prev_v else 'color: red' for v, prev_v in zip(col, col.shift())]
         return [''] * len(col)
     
+    # Highlight the last row (now the first row in reversed order)
     def highlight_last_row(data):
-        return ['background-color: #1D215E' if i == len(data.index) - 1 else 'background-color: black' 
-                for i in range(len(data.index))]
-    
-    # Apply styles
-    df_styled = df_styled.apply(color_columns)
-    
-    # Apply background color to all columns
-    for col in display_df.columns:
-        df_styled = df_styled.apply(highlight_last_row, axis=0, subset=[col])
-    
-    # Set text alignment
-    df_styled = df_styled.set_properties(**{'text-align': 'center'})
-    
-    # Display the data
-    st.subheader(f"{title} ({dispdate})")
-    st.dataframe(
-        df_styled,
-        use_container_width=True,
-        height=400
-    )
+        colors = ['background-color: #1D215E'] + ['background-color: black'] * (len(data) - 1)
+        return colors
 
-    # Display metrics
-    st.markdown("---")
-    col1, col2, col3, col4 = st.columns(4)
-    if len(display_df) >= 2:
-        with col1:
-            st.metric("Latest PCR_COI", f"{display_df['PCR_COI'].iloc[-1]:.2f}", 
-                     f"{display_df['PCR_COI'].iloc[-1] - display_df['PCR_COI'].iloc[-2]:.2f}")
-        with col2:
-            st.metric("Latest RSI", f"{display_df['RSI'].iloc[-1]:.2f}", 
-                     f"{display_df['RSI'].iloc[-1] - display_df['RSI'].iloc[-2]:.2f}")
-        with col3:
-            st.metric("Latest ZSCORE", f"{display_df['ZSCORE'].iloc[-1]:.2f}", 
-                     f"{display_df['ZSCORE'].iloc[-1] - display_df['ZSCORE'].iloc[-2]:.2f}")
-    else :
-        print("Not enough data in the DataFrame.")
+    # Apply styles with datetime as the index
+    df_styled = display_df.style.format(format_dict) \
+                                .apply(color_columns) \
+                                .apply(highlight_last_row, axis=0) \
+                                .set_properties(**{'text-align': 'center'})
+
+    # Display the styled DataFrame with latest data at the top
+    st.subheader(f"{title} ({dispdate})")
+    st.dataframe(df_styled, use_container_width=True, height=400)
+
+
+
 
 # Create a placeholder for the data
 placeholder = st.empty()
@@ -103,8 +84,6 @@ while True:
         file_path = "NIFTY.csv"
 
         url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{file_path}"
-        
-        
         headers = {"Authorization": f"token {token}"}
 
         response = requests.get(url, headers=headers)
@@ -118,7 +97,6 @@ while True:
             df_nifty = pd.DataFrame()
             print(response)
 
-        print(df_nifty.tail(5))
 
         file_path = "BANKNIFTY.csv"
         url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{file_path}"
@@ -149,5 +127,5 @@ while True:
             """,
             unsafe_allow_html=True
         )
-
+    sys.exit(1)
     time.sleep(30)
