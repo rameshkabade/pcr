@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import time
@@ -14,63 +13,82 @@ st.set_page_config(
     page_icon="📱",
 )
 
-
-
 def display_data(df, title):
-    # Check if the DataFrame has sufficient data
     if df.empty or len(df) < 2:
         st.warning(f"No data available for {title}")
         return
 
-    # Ensure unique index to prevent styling errors
     if not df.index.is_unique:
         df = df[~df.index.duplicated(keep='first')]
 
-    # Reverse the DataFrame so the latest data appears first
-    display_df = df[::-1]
-
-    # Get the most recent datetime for display
+    display_df = df.copy() ##df[::-1]
     dispdate = pd.to_datetime(display_df.index[0]).strftime('%Y-%m-%d %H:%M')
 
-    # Define formatting for specific columns
     format_dict = {
         'CLOSE': '{:.2f}',
+        'ATM' : '{:.0f}',
         'PCR_VOL': '{:.2f}',
         'PCR_OI': '{:.2f}',
         'PCR_COI': '{:.2f}',
         'ZSCORE': '{:.2f}',
         'RSI': '{:.2f}',
-        'SIGNAL': '{}'
+        'SIGNAL': '{}',
+        'SUP' : '{:.0f}',
+        'RES' : '{:.0f}'
     }
 
-    # Define column color style
-    def color_columns(col):
-        if col.name in ['ZSCORE', 'RSI', 'PCR_COI']:
-            return ['color: green' if v > prev_v else 'color: red' for v, prev_v in zip(col, col.shift())]
-        return [''] * len(col)
-    
-    # Highlight the last row (now the first row in reversed order)
-    def highlight_last_row(data):
-        colors = ['background-color: #1D215E'] + ['background-color: black'] * (len(data) - 1)
-        return colors
 
-    # Apply styles with datetime as the index
+
+    def color_columns(col):
+        """
+        Color formatter for DataFrame columns:
+        - For RSI, ZSCORE, PCR_COI columns:
+          - Green if current value > previous value
+          - Red if current value < previous value
+          - No color if equal
+        
+        Args:
+            col: pandas Series (DataFrame column)
+        Returns:
+            list: List of CSS color styles for each row
+        """
+        if col.name in ['ZSCORE', 'RSI', 'PCR_COI']:
+            styles = []
+            for i in range(len(col)):
+                if i == 0:  # First row has no previous value
+                    styles.append('')
+                else:
+                    current = col.iloc[i]
+                    previous = col.iloc[i-1]
+                    
+                    if current > previous:
+                        styles.append('color: green')
+                    elif current < previous:
+                        styles.append('color: red')
+                    else:
+                        styles.append('')
+                    print(f"Color for {i}, {current},  {previous}", styles)
+            return styles
+        
+        return [''] * len(col)
+
+
+    def highlight_last_row(data):
+        return ['background-color: #1D215E' if i == len(data.index) - 1 else 'background-color: black' 
+                for i in range(len(data.index))]
+
     df_styled = display_df.style.format(format_dict) \
                                 .apply(color_columns) \
                                 .apply(highlight_last_row, axis=0) \
                                 .set_properties(**{'text-align': 'center'})
 
-    # Display the styled DataFrame with latest data at the top
     st.subheader(f"{title} ({dispdate})")
     st.dataframe(df_styled, use_container_width=True, height=400)
 
 
 
-
-# Create a placeholder for the data
 placeholder = st.empty()
 
-# Main loop for continuous updates
 while True:
     with placeholder.container():
 
@@ -127,5 +145,4 @@ while True:
             """,
             unsafe_allow_html=True
         )
-    sys.exit(1)
-    time.sleep(30)
+    time.sleep(60)
