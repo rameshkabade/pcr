@@ -52,7 +52,7 @@ def display_data(df, title):
         Returns:
             list: List of CSS color styles for each row
         """
-        if col.name in ['ZSCORE', 'RSI', 'PCR_COI']:
+        if col.name in ['ZSCORE', 'RSI', 'PCR_COI', 'PCR_OI']:
             styles = []
             for i in range(len(col)):
                 if i == 0:  # First row has no previous value
