@@ -7,7 +7,7 @@ import io
 import os
 import sys
 
-DEBUG = 0 
+DEBUG = 1 
 
 st.set_page_config(
     layout="wide",
@@ -15,33 +15,48 @@ st.set_page_config(
     page_icon="📱",
 )
 
-# Add custom HTML/JavaScript for auto-scrolling that works with Streamlit
 st.markdown("""
     <style>
         /* Hide Streamlit Branding */
         #MainMenu {visibility: hidden;}
         header {visibility: hidden;}
         footer {visibility: hidden;}
+
+        /* Remove all unnecessary margins and paddings */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
         
-        /* Make dataframe headers more compact */
+        .main {
+            padding-top: 0 !important; /* Ensure no padding at the top */
+            margin-top: -50px; /* Adjust margin to pull content upwards */
+        }
+
+        .block-container {
+            padding-top: 0rem !important; /* Remove padding specific to content */
+            padding-bottom: 0rem !important;
+        }
+
+        /* Compact DataFrame display */
         .stDataFrame thead th {
             padding-top: 2px !important;
             padding-bottom: 2px !important;
         }
-        
-        /* Reduce padding in dataframe cells */
+
         .stDataFrame tbody td {
             padding-top: 2px !important;
             padding-bottom: 2px !important;
         }
-        
-        /* Make subheaders more compact and smaller */
+
+        /* Compact subheaders */
         .st-emotion-cache-1wivap2 {
             margin-top: 0.5rem !important;
             margin-bottom: 0.5rem !important;
         }
-        
-        /* Custom class for smaller title */
+
+        /* Small title styling */
         .small-title {
             font-size: 18px !important;
             margin: 0 !important;
@@ -52,20 +67,21 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+
 # Add JavaScript for scrolling - using Streamlit's components
-js_code = """
-    <script>
-        function scroll_to_bottom() {
-            window.parent.document.querySelector('.main').scrollTo(0, window.parent.document.querySelector('.main').scrollHeight);
-        }
-        window.addEventListener('load', function() {
-            setTimeout(scroll_to_bottom, 100);
-            setTimeout(scroll_to_bottom, 500);
-            setTimeout(scroll_to_bottom, 1000);
-        });
-    </script>
-"""
-st.components.v1.html(js_code, height=0)
+##js_code = """
+##    <script>
+##        function scroll_to_bottom() {
+##            window.parent.document.querySelector('.main').scrollTo(0, window.parent.document.querySelector('.main').scrollHeight);
+##        }
+##        window.addEventListener('load', function() {
+##            setTimeout(scroll_to_bottom, 100);
+##            setTimeout(scroll_to_bottom, 500);
+##            setTimeout(scroll_to_bottom, 1000);
+##        });
+##    </script>
+##"""
+##st.components.v1.html(js_code, height=0)
 
 def display_data(df, title):
     if df.empty or len(df) < 2:
@@ -76,7 +92,8 @@ def display_data(df, title):
         df = df[~df.index.duplicated(keep='first')]
 
     # Keep only the last 4 rows for a more compact view
-    display_df = df.tail(3).copy()
+##    display_df = df.tail(3).copy()
+    display_df = df.copy()
     dispdate = pd.to_datetime(display_df.index[0]).strftime('%Y-%m-%d %H:%M')
 
     format_dict = {
@@ -125,15 +142,18 @@ def display_data(df, title):
     #st.markdown(f"<h3 class='small-title'>{title}   ( {dispdate} )</h3>", unsafe_allow_html=True)
     st.markdown(
         f"""
-        <h3 class='small-title'>
-            {title} <span style='font-size: 12px;'>{dispdate}</span>
-        </h3>
+        <div class='section'>
+                <h3 class='small-title'>
+                    {title} <span style='font-size: 12px;'>{dispdate}</span>
+                </h3>
+        </div>
         """,
         unsafe_allow_html=True
     )
 
-    
-    st.dataframe(df_styled, use_container_width=True, height=140)
+ ## space btn section    
+    st.dataframe(df_styled, use_container_width=True, height=210)
+    st.markdown("<div style='margin-bottom: 2rem;'></div>", unsafe_allow_html=True)
 
 def fetch_data(repo_owner, token, repo_name, file_path):
     if DEBUG == 0:
