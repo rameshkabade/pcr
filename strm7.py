@@ -7,7 +7,7 @@ import io
 import os
 import sys
 
-DEBUG = 1 
+DEBUG = 0 
 
 st.set_page_config(
     layout="wide",
